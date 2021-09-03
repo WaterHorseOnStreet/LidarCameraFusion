@@ -47,6 +47,7 @@ std::ofstream pose_pic;
 int img_count = 0;
 cv::Mat ProjectionMat;
 
+cv::Mat cam2Tocam0R, cam2Tocam0T;
 
 
 // colored_cloud_pub;
@@ -98,48 +99,41 @@ class RsCamFusion
       intrinsic = cam_intrinsic;
       extrinsic = lidar2cam_extrinsic;
       distcoeff = cam_distcoeff;
-      transform(0,0) = extrinsic.at<double>(0,0);
-      transform(0,1) = extrinsic.at<double>(0,1);
-      transform(0,2) = extrinsic.at<double>(0,2);
-      transform(0,3) = extrinsic.at<double>(0,3);
-      transform(1,0) = extrinsic.at<double>(1,0);
-      transform(1,1) = extrinsic.at<double>(1,1);
-      transform(1,2) = extrinsic.at<double>(1,2);
-      transform(1,3) = extrinsic.at<double>(1,3);
-      transform(2,0) = extrinsic.at<double>(2,0);
-      transform(2,1) = extrinsic.at<double>(2,1);
-      transform(2,2) = extrinsic.at<double>(2,2);
-      transform(2,3) = extrinsic.at<double>(2,3);
-      transform(3,0) = extrinsic.at<double>(3,0);
-      transform(3,1) = extrinsic.at<double>(3,1);
-      transform(3,2) = extrinsic.at<double>(3,2);
-      transform(3,3) = extrinsic.at<double>(3,3);
 
-      PrjMat(0,0) = ProjectionMat.at<double>(0,0);
-      PrjMat(0,1) = ProjectionMat.at<double>(0,1);
-      PrjMat(0,2) = ProjectionMat.at<double>(0,2);
-      PrjMat(0,3) = ProjectionMat.at<double>(0,3);
-      PrjMat(1,0) = ProjectionMat.at<double>(1,0);
-      PrjMat(1,1) = ProjectionMat.at<double>(1,1);
-      PrjMat(1,2) = ProjectionMat.at<double>(1,2);
-      PrjMat(1,3) = ProjectionMat.at<double>(1,3);
-      PrjMat(2,0) = ProjectionMat.at<double>(2,0);
-      PrjMat(2,1) = ProjectionMat.at<double>(2,1);
-      PrjMat(2,2) = ProjectionMat.at<double>(2,2);
-      PrjMat(2,3) = ProjectionMat.at<double>(2,3);
+      for(int i = 0; i < 4; i++)
+      {
+          for(int j = 0; j < 4; j++)
+          {
+              transform(i,j) = extrinsic.at<double>(i,j);
+          }
+      }
+      std::cout<<transform<<std::endl;
 
-      rel_R2(0,0) = 9.999758e-01;
-      rel_R2(0,1) = -5.267463e-03;
-      rel_R2(0,2) = -4.552439e-03;
-      rel_R2(1,0) = 5.251945e-03;
-      rel_R2(1,1) = 9.999804e-01;
-      rel_R2(1,2) = -3.413835e-03;
-      rel_R2(2,0) = 4.570332e-03;
-      rel_R2(2,1) = 3.389843e-03;
-      rel_R2(2,2) = 9.999838e-01;
-      rel_T2(0,0) = 5.956621e-02;
-      rel_T2(1,0) = 2.900141e-04;
-      rel_T2(2,0) = 2.577209e-03;
+      for(int i = 0; i < 3; i++)
+      {
+          for(int j = 0; j < 4; j++)
+          {
+              PrjMat(i,j) = ProjectionMat.at<double>(i,j);
+              
+          }
+      }
+      for(int i = 0; i < 3; i++)
+      {
+          for(int j = 0; j < 3; j++)
+          {
+              rel_R2(i,j) = cam2Tocam0R.at<double>(i,j);
+          }
+      }
+
+        
+      std::cout<<PrjMat<<std::endl;
+      std::cout<<rel_R2<<std::endl;
+
+      rel_T2(0,0) = cam2Tocam0T.at<double>(0);
+      rel_T2(1,0) = cam2Tocam0T.at<double>(1);
+      rel_T2(2,0) = cam2Tocam0T.at<double>(2);
+
+      std::cout<<rel_T2<<std::endl;
 
       rel_RT.block<3,3>(0,0) = rel_R2;
       rel_RT.block<3,1>(0,3) = rel_T2;
@@ -273,31 +267,6 @@ class RsCamFusion
       pcl::transformPointCloud (*input_cloud_ptr, *transformed_cloud, transform);        //lidar coordinate(forward x+, left y+, up z+) 
                                                                                          //camera coordiante(right x+, down y+, forward z+) (3D-3D)  
                                                                                          //using the extrinsic matrix between this two coordinate system
-      //transform the points in camera current frame
-      //Eigen::Matrix4d trans_mat = transform*current_pose.cast<double>()*inv_transform;
-      // for(int i=0;i<4;i++)
-      // {
-      //   if(i == 0)
-      //   {
-      //     pose_pic<<img_count<<"  "<<current_pose.row(i)<<" ";
-      //   }
-      //   else if(i==3)
-      //   {
-      //     pose_pic<<current_pose.row(i)<<std::endl;
-      //   }
-      //   else
-      //   {
-      //     pose_pic<<current_pose.row(i)<<" ";
-      //   }  
-      // }
-      // img_count++; 
-      // if(!ros::ok())
-      // {
-      //   pose_pic.close();
-      // }
-
-      // trans_mat = trans_mat.inverse();
-      // pcl::transformPointCloud (*transformed_cloud, *transformed_cloud, trans_mat); 
 
       std::vector<cv::Point3d> lidar_points;
       std::vector<cv::Scalar> dis_color;
@@ -323,15 +292,8 @@ class RsCamFusion
           }
       }
 
-      // //calculate the camera pose using lidar pose and the relative pose between them
-      // Eigen::Matrix4d camera2world = current_pose.cast<double>();
-      // Eigen::Matrix3d rMat_a = camera2world.block<3,3>(0,0);
-      // Eigen::Matrix<double,3,1> rVec_a = camera2world.block<3,1>(0,3);
-      // cv::eigen2cv(rMat_a,rMat);
-      // cv::eigen2cv(rVec_a,rVec);
 
-      //project world points from the camera coordinate to the image coordinate(right x+, down y+)
-      //cv::projectPoints(lidar_points, rMat, tVec, intrinsic, distcoeff, imagePoints);     
+      //project world points from the camera coordinate to the image coordinate(right x+, down y+)  
       pcl::transformPointCloud (*transformed_cloud_imgplane, *transformed_cloud_imgplane, PrjMat);  
 
       for(int i=0;i<transformed_cloud_imgplane->points.size();i++)
@@ -364,7 +326,6 @@ class RsCamFusion
       }
       publishImage(fused_image_pub, image_header, image_to_show);
       //transform colored points from camera coordinate to lidar coordinate
-      //Eigen::Matrix4d inv_trans = Eigen::Matrix4d::Identity();
       pcl::transformPointCloud (*colored_cloud, *colored_cloud_transback, inv_transform);   
       pcl::transformPointCloud (*colored_cloud_transback, *colored_cloud_transback, current_pose);    
 
@@ -383,6 +344,10 @@ class RsCamFusion
             tmp_colored_cloud_toshow->points.push_back (point);  
           }
         *colored_cloud_toshow += *tmp_colored_cloud_toshow;
+        if(!ros::ok())
+        {
+            pcl::io::savePCDFile("cloudcolor.pcd",*colored_cloud_toshow);
+        }
         publishCloudtoShow(colored_cloud_showpub, cloud_header, colored_cloud_toshow);
       } 
 
@@ -488,12 +453,6 @@ int main(int argc, char** argv)
     WARN << "Config file is empty!" << REND;
     return 0;
   }
-
-//   pose_pic.open("/home/lie/msf_ws/pose_result.txt", std::fstream::out);
-//   if(!pose_pic.is_open())
-//   {
-//       std::cout<<"can not open file !!!!!!"<<std::endl;
-//   }
   
   INFO << "config path: " << config_path << REND;
   INFO << "config file: " << file_name << REND;
@@ -508,6 +467,8 @@ int main(int argc, char** argv)
   fs_reader["DistCoeff"] >> cam_distcoeff;
   fs_reader["ImageSize"] >> img_size;
   fs_reader["ProjectionMat"] >> ProjectionMat;
+  fs_reader["R"] >> cam2Tocam0R;
+  fs_reader["T"] >> cam2Tocam0T;
   fs_reader.release();
 
   if (lidar_topic.empty() || camera_topic.empty())
