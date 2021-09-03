@@ -1,5 +1,5 @@
 # LidarCameraFusion
-<<<<<<< HEAD
+
 colored_pointcloud package
 
 Install: 
@@ -25,4 +25,4 @@ below is a piece of result of kitti dataset:
 =======
 This is a demo which colors the pointcloud using image information. Using this tool we can create a coloured 3D world. But because of the sparsity of pointcloud comparing with image pixels, we need to research more on deepth completion later.
 
->>>>>>> c5ea4fe68895e7fc0b75e5ab4ab744fa682504c5
+
