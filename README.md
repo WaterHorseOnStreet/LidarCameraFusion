@@ -1,4 +1,5 @@
 # LidarCameraFusion
+<<<<<<< HEAD
 colored_pointcloud package
 
 Install: 
@@ -17,5 +18,11 @@ roslaunch colored_pointcloud colored_pointcloud161.launch
 
 below is a piece of result of kitti dataset:
 
-![](/home/lie/lcf_ws/src/LidarCameraFusion/webwxgetmsgimg.jpeg)
+![](/home/lie/lcf_ws/src/LidarCameraFusion/colored_pointcloud-master/img/webwxgetmsgimg.jpeg)
 
+![](/home/lie/lcf_ws/src/LidarCameraFusion/colored_pointcloud-master/img/2.jpeg)
+
+=======
+This is a demo which colors the pointcloud using image information. Using this tool we can create a coloured 3D world. But because of the sparsity of pointcloud comparing with image pixels, we need to research more on deepth completion later.
+
+>>>>>>> c5ea4fe68895e7fc0b75e5ab4ab744fa682504c5
